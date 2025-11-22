@@ -1,5 +1,7 @@
 "use client";
 
+import { Pie, PieChart } from "recharts";
+
 import { Card, CardContent } from "@/app/_components/ui/card";
 import {
   ChartConfig,
@@ -11,7 +13,6 @@ import { TransactionType } from "@prisma/client";
 import { TransactionPercentagePerType } from "@/app/_data/get-dashboard/types";
 import { PiggyBankIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import PercentageItem from "./percentage-item";
-import { Pie, PieChart } from "recharts";
 
 const chartConfig = {
   [TransactionType.INVESTMENT]: {
@@ -59,7 +60,7 @@ const TransactionsPieChart = ({
     },
   ];
   return (
-    <Card className="flex flex-col p-12">
+    <Card className="flex flex-col p-6">
       <CardContent className="flex-1 pb-0">
         <ChartContainer
           config={chartConfig}
