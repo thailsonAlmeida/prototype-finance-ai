@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -42,24 +46,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { upsertTransaction } from "../_actions/upsert-transaction";
 
-interface UpsertTransactionDialogProps {
-  isOpen: boolean;
-  defaultValues?: FormSchema;
-  transactionId?: string;
-  setIsOpen: (isOpen: boolean) => void;
-}
-
 const formSchema = z.object({
-  name: z.string().trim().min(1, {
-    message: "O nome é obrigatório.",
-  }),
+  name: z.string().trim().min(1, { message: "O nome é obrigatório." }),
   amount: z
-    .number({
-      required_error: "O valor é obrigatório.",
-    })
-    .positive({
-      message: "O valor deve ser positivo.",
-    }),
+    .number({ required_error: "O valor é obrigatório." })
+    .positive({ message: "O valor deve ser positivo." }),
   type: z.nativeEnum(TransactionType, {
     required_error: "O tipo é obrigatório.",
   }),
@@ -69,19 +60,27 @@ const formSchema = z.object({
   paymentMethod: z.nativeEnum(TransactionPaymentMethod, {
     required_error: "O método de pagamento é obrigatório.",
   }),
-  date: z.date({
-    required_error: "A data é obrigatória.",
-  }),
+  date: z.date({ required_error: "A data é obrigatória." }),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
 
-const UpsertTransactionDialog = ({
+interface UpsertTransactionDialogProps {
+  isOpen: boolean;
+  defaultValues?: FormSchema;
+  transactionId?: string;
+  setIsOpen: (isOpen: boolean) => void;
+}
+
+export default function UpsertTransactionDialog({
   isOpen,
   defaultValues,
   transactionId,
   setIsOpen,
-}: UpsertTransactionDialogProps) => {
+}: UpsertTransactionDialogProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues ?? {
@@ -94,29 +93,51 @@ const UpsertTransactionDialog = ({
     },
   });
 
+  const isUpdate = Boolean(transactionId);
+
+  // Sincroniza o form quando abrir ou quando defaultValues mudam
+  useEffect(() => {
+    if (isOpen) {
+      // se passaram defaultValues, garante que o form receba os valores atuais
+      form.reset(
+        defaultValues ?? {
+          amount: 0,
+          category: TransactionCategory.OTHER,
+          date: new Date(),
+          name: "",
+          paymentMethod: TransactionPaymentMethod.CASH,
+          type: TransactionType.EXPENSE,
+        },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, defaultValues]);
+
   const onSubmit = async (data: FormSchema) => {
     try {
       await upsertTransaction({ ...data, id: transactionId });
+
+      // Atualiza os Server Components via App Router
+      startTransition(() => {
+        router.refresh();
+      });
+
       setIsOpen(false);
-      form.reset();
+      form.reset(); // limpa o form
     } catch (error) {
       console.error(error);
     }
   };
-
-  const isUpdate = Boolean(transactionId);
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
-        if (!open) {
-          form.reset();
-        }
+        if (!open) form.reset();
       }}
     >
-      <DialogTrigger asChild></DialogTrigger>
+      <DialogTrigger asChild />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -140,6 +161,7 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="amount"
@@ -149,9 +171,10 @@ const UpsertTransactionDialog = ({
                   <FormControl>
                     <MoneyInput
                       placeholder="Digite o valor..."
-                      value={field.value}
+                      // MoneyInput é controlado: mantém number | undefined
+                      value={field.value ?? undefined}
                       onValueChange={({ floatValue }) =>
-                        field.onChange(floatValue)
+                        field.onChange(floatValue ?? 0)
                       }
                       onBlur={field.onBlur}
                       disabled={field.disabled}
@@ -161,6 +184,7 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="type"
@@ -168,12 +192,15 @@ const UpsertTransactionDialog = ({
                 <FormItem>
                   <FormLabel>Tipo</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={String(field.value)}
+                    onValueChange={(val) => {
+                      // converter para enum
+                      field.onChange(val as TransactionType);
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a verified email to display" />
+                        <SelectValue placeholder="Selecione o tipo..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -188,6 +215,7 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="category"
@@ -195,8 +223,10 @@ const UpsertTransactionDialog = ({
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={String(field.value)}
+                    onValueChange={(val) =>
+                      field.onChange(val as TransactionCategory)
+                    }
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -215,6 +245,7 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="paymentMethod"
@@ -222,8 +253,10 @@ const UpsertTransactionDialog = ({
                 <FormItem>
                   <FormLabel>Método de pagamento</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={String(field.value)}
+                    onValueChange={(val) =>
+                      field.onChange(val as TransactionPaymentMethod)
+                    }
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -242,6 +275,7 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="date"
@@ -253,13 +287,14 @@ const UpsertTransactionDialog = ({
                 </FormItem>
               )}
             />
+
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit">
+              <Button type="submit" disabled={isPending}>
                 {isUpdate ? "Atualizar" : "Adicionar"}
               </Button>
             </DialogFooter>
@@ -268,6 +303,4 @@ const UpsertTransactionDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
-
-export default UpsertTransactionDialog;
+}
