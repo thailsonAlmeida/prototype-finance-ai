@@ -1,3 +1,4 @@
+// app/(your-path)/home/page.tsx (ou onde estiver seu Home component)
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Navbar from "../_components/navbar";
@@ -32,9 +33,12 @@ const Home = async ({ searchParams: { month } }: HomeProps) => {
   return (
     <>
       <Navbar />
-      <div className="flex h-full flex-col space-y-6 overflow-hidden p-6">
-        <div className="flex justify-between">
+      {/* REMOVED overflow-hidden so the page/document can scroll normally */}
+      <div className="flex min-h-[calc(100vh-64px)] flex-col gap-6 p-4 md:p-6">
+        {/* Header: empilha no mobile, alinha horizontal somente em >1024px */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
+
           <div className="flex items-center gap-3">
             <AiReportButton
               month={month}
@@ -45,21 +49,40 @@ const Home = async ({ searchParams: { month } }: HomeProps) => {
             <TimeSelect />
           </div>
         </div>
-        <div className="grid h-full grid-cols-[2fr,1fr] gap-6 overflow-hidden">
-          <div className="flex flex-col gap-6 overflow-hidden">
+
+        {/* Main grid: mobile 1 coluna. Em telas maiores que 1024px (lg+) usamos 2 colunas 2fr/1fr */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr,1fr]">
+          {/* Main column */}
+          <div className="flex flex-col gap-6">
+            {/* Summary cards: responsivo dentro do próprio componente */}
             <SummaryCards
               month={month}
               {...dashboard}
               userCanAddTransaction={userCanAddTransaction}
             />
-            <div className="grid h-full grid-cols-3 grid-rows-1 gap-6 overflow-hidden">
-              <TransactionsPieChart {...dashboard} />
-              <ExpensesPerCategory
-                expensesPerCategory={dashboard.totalExpensePerCategory}
-              />
+
+            {/* Charts area:
+              - mobile até 1024px: stacked (1 coluna)
+              - >1024px: grid de 3 colunas, com o Pie ocupando 2 colunas
+            */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* TransactionsPieChart ocupa 2 colunas em lg+ para ficar maior */}
+              <div className="lg:col-span-2">
+                <TransactionsPieChart {...dashboard} />
+              </div>
+
+              <div className="lg:col-span-1">
+                <ExpensesPerCategory
+                  expensesPerCategory={dashboard.totalExpensePerCategory}
+                />
+              </div>
             </div>
           </div>
-          <LastTransactions lastTransactions={dashboard.lastTransactions} />
+
+          {/* Sidebar / last transactions — ficará abaixo em resoluções <=1024px */}
+          <div className="w-full">
+            <LastTransactions lastTransactions={dashboard.lastTransactions} />
+          </div>
         </div>
       </div>
     </>

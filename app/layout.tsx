@@ -27,7 +27,8 @@ export default function RootLayout({
             baseTheme: dark,
           }}
         >
-          <div className="flex h-full flex-col overflow-hidden">{children}</div>
+          {/* Use min-h-screen e remova overflow-hidden para permitir scroll do documento */}
+          <div className="flex min-h-screen flex-col">{children}</div>
         </ClerkProvider>
         <Toaster />
       </body>

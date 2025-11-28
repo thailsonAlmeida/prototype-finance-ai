@@ -24,18 +24,19 @@ const SummaryCards = async ({
 }: SummaryCards) => {
   return (
     <div className="space-y-6">
-      {/* PRIMEIRO CARD */}
+      {/* PRIMEIRO CARD: ocupa 100% no mobile, largura limitada em telas maiores */}
+      <div className="w-full">
+        <SummaryCard
+          icon={<WalletIcon size={16} />}
+          title="Saldo"
+          amount={balance}
+          size="large"
+          userCanAddTransaction={userCanAddTransaction}
+        />
+      </div>
 
-      <SummaryCard
-        icon={<WalletIcon size={16} />}
-        title="Saldo"
-        amount={balance}
-        size="large"
-        userCanAddTransaction={userCanAddTransaction}
-      />
-
-      {/* OUTROS CARDS */}
-      <div className="grid grid-cols-3 gap-6">
+      {/* OUTROS CARDS: mobile (<=1024px) — 1 coluna; lg+ (>1024px) — 3 colunas */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <SummaryCard
           icon={<PiggyBankIcon size={16} />}
           title="Investido"

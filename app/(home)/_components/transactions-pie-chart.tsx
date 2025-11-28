@@ -1,6 +1,6 @@
 "use client";
 
-import { Pie, PieChart } from "recharts";
+import { Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { Card, CardContent } from "@/app/_components/ui/card";
 import {
@@ -59,28 +59,36 @@ const TransactionsPieChart = ({
       fill: "#FFFFFF",
     },
   ];
+
   return (
-    <Card className="flex flex-col p-6">
+    <Card className="flex flex-col p-4 md:p-6">
       <CardContent className="flex-1 pb-0">
+        {/* Container responsivo: max height em desktop, altura fluida em mobile */}
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
+          className="mx-auto h-[220px] w-full max-w-[420px] md:h-[250px]"
         >
-          <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
-            <Pie
-              data={chartData}
-              dataKey="amount"
-              nameKey="type"
-              innerRadius={60}
-            />
-          </PieChart>
+          {/* Recharts ResponsiveContainer fará o SVG preencher o container */}
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent hideLabel />}
+              />
+              <Pie
+                data={chartData}
+                dataKey="amount"
+                nameKey="type"
+                innerRadius="50%"
+                outerRadius="80%"
+                isAnimationActive={false}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </ChartContainer>
 
-        <div className="space-y-3">
+        {/* Percentages: em mobile mostra em coluna; em md+ pode ficar em coluna também — considere grid se preferir horizontal */}
+        <div className="mt-4 space-y-3">
           <PercentageItem
             icon={<TrendingUpIcon size={16} className="text-primary" />}
             title="Receita"

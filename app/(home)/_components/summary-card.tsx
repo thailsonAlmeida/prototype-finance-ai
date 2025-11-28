@@ -22,12 +22,16 @@ const SummaryCard = ({
       <CardHeader className="flex-row items-center gap-4">
         {icon}
         <p
-          className={`${size === "small" ? "text-muted-foreground" : "text-white opacity-70"}`}
+          className={`${
+            size === "small" ? "text-muted-foreground" : "text-white opacity-70"
+          }`}
         >
           {title}
         </p>
       </CardHeader>
-      <CardContent className="flex justify-between">
+
+      {/* Responsivo: column em telas pequenas, row em sm+ */}
+      <CardContent className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <p
           className={`font-bold ${size === "small" ? "text-2xl" : "text-4xl"}`}
         >
@@ -38,7 +42,12 @@ const SummaryCard = ({
         </p>
 
         {size === "large" && (
-          <AddTransactionButton userCanAddTransaction={userCanAddTransaction} />
+          // mt cria espaço apenas em telas pequenas; sm:mt-0 remove em sm+
+          <div className="mt-2 sm:mt-0">
+            <AddTransactionButton
+              userCanAddTransaction={userCanAddTransaction}
+            />
+          </div>
         )}
       </CardContent>
     </Card>
