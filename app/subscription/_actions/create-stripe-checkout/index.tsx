@@ -17,10 +17,8 @@ export const createStripeCheckout = async () => {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "subscription",
-    success_url:
-      "https://studious-barnacle-jpp76gp9pj7fqwgj-3000.app.github.dev",
-    cancel_url:
-      "https://studious-barnacle-jpp76gp9pj7fqwgj-3000.app.github.dev",
+    success_url: process.env.APP_URL,
+    cancel_url: process.env.APP_URL,
     subscription_data: {
       metadata: {
         clerk_user_id: userId,
