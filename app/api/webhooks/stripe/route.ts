@@ -12,7 +12,7 @@ export const POST = async (request: Request) => {
   }
   const text = await request.text();
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-10-28.acacia",
+    apiVersion: "2025-11-17.clover" as Stripe.LatestApiVersion,
   });
   const event = stripe.webhooks.constructEvent(
     text,
@@ -22,17 +22,55 @@ export const POST = async (request: Request) => {
 
   switch (event.type) {
     case "invoice.paid": {
-      // Atualizar o usuário com o seu novo plano
-      const { customer, subscription, subscription_details } =
-        event.data.object;
-      const clerkUserId = subscription_details?.metadata?.clerk_user_id;
+      const invoice = event.data.object;
+
+      const subscriptionId = invoice.parent?.subscription_details?.subscription;
+
+      const clerkUserId =
+        invoice.parent?.subscription_details?.metadata?.clerk_user_id;
+
+      if (!subscriptionId || !clerkUserId) {
+        return NextResponse.error();
+      }
+
+      await clerkClient().users.updateUser(clerkUserId, {
+        privateMetadata: {
+          stripeCustomerId: invoice.customer,
+          stripeSubscriptionId: subscriptionId,
+        },
+        publicMetadata: {
+          subscriptionPlan: "premium",
+        },
+      });
+
+      break;
+    }
+
+    case "checkout.session.completed": {
+      const session = event.data.object;
+
+      if (session.mode !== "subscription" || !session.subscription) {
+        break;
+      }
+
+      const subscriptionId =
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
+
+      const clerkUserId =
+        session.metadata?.clerk_user_id ??
+        (await stripe.subscriptions.retrieve(subscriptionId)).metadata
+          .clerk_user_id;
+
       if (!clerkUserId) {
         return NextResponse.error();
       }
+
       await clerkClient().users.updateUser(clerkUserId, {
         privateMetadata: {
-          stripeCustomerId: customer,
-          stripeSubscriptionId: subscription,
+          stripeCustomerId: session.customer,
+          stripeSubscriptionId: subscriptionId,
         },
         publicMetadata: {
           subscriptionPlan: "premium",
